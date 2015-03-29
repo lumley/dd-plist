@@ -3,6 +3,7 @@ bin/
 target/
 bin-test/
 build/
+test-files/out*.plist
 
 # exclude auto-generated folder
 gen/
