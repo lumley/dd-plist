@@ -25,6 +25,7 @@ package com.dd.plist;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 
 /**
  * Parses property lists that are in Apple's binary format.
@@ -65,6 +66,17 @@ public class BinaryPropertyListParser {
      * The table holding the information at which offset each object is found
      */
     private int[]  offsetTable;
+
+    private enum SupportedCharset {
+
+        ASCII("ASCII"), UTF8("UTF-8"), UTF16BE("UTF-16BE");
+
+        public Charset charset;
+
+        SupportedCharset(final String charsetName) {
+            charset = Charset.forName(charsetName);
+        }
+    }
 
     /**
      * Protected constructor so that instantiation is fully controlled by the
@@ -250,7 +262,7 @@ public class BinaryPropertyListParser {
                 int[] lengthAndOffset = readLengthAndOffset(objInfo, offset);
                 int length = lengthAndOffset[0];  // Each character is 1 byte
                 int strOffset = lengthAndOffset[1];
-                return new NSString(bytes, offset + strOffset, offset + strOffset + length, "ASCII");
+                return new NSString(bytes, offset + strOffset, offset + strOffset + length, SupportedCharset.ASCII.charset);
             }
             case 0x6: {
                 // UTF-16-BE string
@@ -260,7 +272,7 @@ public class BinaryPropertyListParser {
                 //UTF-16 characters can have variable length, but the Core Foundation reference implementation
                 //assumes 2 byte characters, thus only covering the Basic Multilingual Plane
                 int length = characters * 2;
-                return new NSString(bytes, offset + strOffset, offset + strOffset + length, "UTF-16BE");
+                return new NSString(bytes, offset + strOffset, offset + strOffset + length, SupportedCharset.UTF16BE.charset);
             }
             case 0x7: {
                 //UTF-8 string (v1.0 and later)
@@ -270,7 +282,7 @@ public class BinaryPropertyListParser {
                 //UTF-8 characters can have variable length, so we need to calculate the byte length dynamically
                 //by reading the UTF-8 characters one by one
                 int length = calculateUtf8StringLength(bytes, offset + strOffset, characters);
-                return new NSString(bytes, offset + strOffset, offset + strOffset + length, "UTF-8");
+                return new NSString(bytes, offset + strOffset, offset + strOffset + length, SupportedCharset.UTF8.charset);
             }
             case 0x8: {
                 // UID (v1.0 and later)

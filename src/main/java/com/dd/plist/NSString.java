@@ -47,7 +47,7 @@ public class NSString extends NSObject implements Comparable<Object> {
      * @param encoding The encoding of the binary representation, the name of a supported charset. @throws UnsupportedEncodingException When the given encoding is not supported by the JRE.
      * @see java.lang.String#String(byte[], String)
      */
-    public NSString(byte[] bytes, final int startIndex, final int endIndex, String encoding) throws UnsupportedEncodingException {
+    public NSString(byte[] bytes, final int startIndex, final int endIndex, Charset encoding) throws UnsupportedEncodingException {
         content = new String(bytes, startIndex, endIndex - startIndex, encoding);
     }
 
