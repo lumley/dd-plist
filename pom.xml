@@ -8,9 +8,9 @@
 	<groupId>com.googlecode.plist</groupId>
 	<artifactId>dd-plist</artifactId>
 	<packaging>jar</packaging>
-	<version>1.16.1</version>
+	<version>1.16</version>
 	<name>dd-plist</name>
-	<url>https://github.com/lumley/dd-plist</url>
+	<url>http://plist.googlecode.com</url>
 	<description>
 	This library enables Java applications to work with property lists in various formats.
 	Supported formats for reading and writing are OS X/iOS binary and XML property lists.
@@ -43,15 +43,16 @@
 	        <name>Cornel Creanga</name>
 	        <email>cornelcreanga@yahoo.com</email>
 	    </contributor>
-        <contributor>
-            <name>Sergio R. Lumley</name>
-            <email>sergio.lumley@xyrality.com</email>
-        </contributor>
 	</contributors>
 	<issueManagement>
 		<system>Google Code</system>
 		<url>http://code.google.com/p/plist/issues</url>
 	</issueManagement>
+	<scm>
+		<connection>scm:svn:http://plist.googlecode.com/svn/trunk/</connection>
+		<developerConnection>scm:svn:https://plist.googlecode.com/svn/trunk/</developerConnection>
+		<url>http://code.google.com/p/plist/source/browse/trunk</url>
+	</scm>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -131,6 +132,20 @@
                         <phase>package</phase> <!-- bind to the packaging phase -->
                         <goals>
                             <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.4</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
                         </goals>
                     </execution>
                 </executions>
