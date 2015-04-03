@@ -45,8 +45,6 @@ import java.text.ParseException;
  */
 public class PropertyListParser {
 
-    protected static final int READ_MAX_VALUE = 4096;
-
     private static final int TYPE_XML = 0;
     private static final int TYPE_BINARY = 1;
     private static final int TYPE_ASCII = 2;
@@ -140,11 +138,12 @@ public class PropertyListParser {
      */
     protected static byte[] readAll(InputStream in) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-
-        byte[] buf = new byte[READ_MAX_VALUE];
-        int read;
-        while ((read = in.read(buf, 0, buf.length)) != -1) {
-            outputStream.write(buf, 0, read);
+        byte[] buf = new byte[512];
+        int read = 512;
+        while (read == 512) {
+            read = in.read(buf);
+            if(read != -1)
+                outputStream.write(buf, 0, read);
         }
         return outputStream.toByteArray();
     }
