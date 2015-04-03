@@ -135,8 +135,7 @@ public class BinaryPropertyListParser {
         offsetTable = new int[numObjects];
 
         for (int i = 0; i < numObjects; i++) {
-            byte[] offsetBytes = copyOfRange(bytes, offsetTableOffset + i * offsetSize, offsetTableOffset + (i + 1) * offsetSize);
-            offsetTable[i] = (int) parseUnsignedInt(offsetBytes);
+            offsetTable[i] = (int) parseUnsignedInt(bytes, offsetTableOffset + i * offsetSize, offsetTableOffset + (i + 1) * offsetSize);
         }
 
         return parseObject(topObject);
@@ -202,40 +201,39 @@ public class BinaryPropertyListParser {
                     case 0xC: {
                         //URL with no base URL (v1.0 and later)
                         //TODO Implement binary URL parsing (not yet even implemented in Core Foundation as of revision 855.17)
-                        break;
+                        throw new UnsupportedOperationException("The given binary property list contains a URL object. Parsing of this object type is not yet implemented.");
                     }
                     case 0xD: {
                         //URL with base URL (v1.0 and later)
                         //TODO Implement binary URL parsing (not yet even implemented in Core Foundation as of revision 855.17)
-                        break;
+                        throw new UnsupportedOperationException("The given binary property list contains a URL object. Parsing of this object type is not yet implemented.");
                     }
                     case 0xE: {
                         //16-byte UUID (v1.0 and later)
                         //TODO Implement binary UUID parsing (not yet even implemented in Core Foundation as of revision 855.17)
+                        throw new UnsupportedOperationException("The given binary property list contains a UUID object. Parsing of this object type is not yet implemented.");
                     }
-                    case 0xF: {
-                        //filler byte
-                        return null;
+                    default: {
+                        throw new PropertyListFormatException("The given binary property list contains an object of unknown type (" + objType + ")");
                     }
                 }
-                break;
             }
             case 0x1: {
                 //integer
                 int length = (int) Math.pow(2, objInfo);
-                return new NSNumber(copyOfRange(bytes, offset + 1, offset + 1 + length), NSNumber.INTEGER);
+                return new NSNumber(bytes, offset + 1, offset + 1 + length, NSNumber.INTEGER);
             }
             case 0x2: {
                 //real
                 int length = (int) Math.pow(2, objInfo);
-                return new NSNumber(copyOfRange(bytes, offset + 1, offset + 1 + length), NSNumber.REAL);
+                return new NSNumber(bytes, offset + 1, offset + 1 + length, NSNumber.REAL);
             }
             case 0x3: {
                 //Date
                 if (objInfo != 0x3) {
                     throw new PropertyListFormatException("The given binary property list contains a date object of an unknown type ("+objInfo+")");
                 }
-                return new NSDate(copyOfRange(bytes, offset + 1, offset + 9));
+                return new NSDate(bytes, offset + 1, offset + 9);
             }
             case 0x4: {
                 //Data
@@ -249,7 +247,7 @@ public class BinaryPropertyListParser {
                 int[] lengthAndOffset = readLengthAndOffset(objInfo, offset);
                 int length = lengthAndOffset[0];  //Each character is 1 byte
                 int strOffset = lengthAndOffset[1];
-                return new NSString(copyOfRange(bytes, offset + strOffset, offset + strOffset + length), "ASCII");
+                return new NSString(bytes, offset + strOffset, offset + strOffset + length, "ASCII");
             }
             case 0x6: {
                 //UTF-16-BE string
@@ -259,7 +257,7 @@ public class BinaryPropertyListParser {
                 //UTF-16 characters can have variable length, but the Core Foundation reference implementation
                 //assumes 2 byte characters, thus only covering the Basic Multilingual Plane
                 int length = characters * 2;
-                return new NSString(copyOfRange(bytes, offset + strOffset, offset + strOffset + length), "UTF-16BE");
+                return new NSString(bytes, offset + strOffset, offset + strOffset + length, "UTF-16BE");
             }
             case 0x7: {
                 //UTF-8 string (v1.0 and later)
@@ -269,7 +267,7 @@ public class BinaryPropertyListParser {
                 //UTF-8 characters can have variable length, so we need to calculate the byte length dynamically
                 //by reading the UTF-8 characters one by one
                 int length = calculateUtf8StringLength(bytes, offset + strOffset, characters);
-                return new NSString(copyOfRange(bytes, offset + strOffset, offset + strOffset + length), "UTF-8");
+                return new NSString(bytes, offset + strOffset, offset + strOffset + length, "UTF-8");
             }
             case 0x8: {
                 //UID (v1.0 and later)
@@ -284,9 +282,7 @@ public class BinaryPropertyListParser {
 
                 NSArray array = new NSArray(length);
                 for (int i = 0; i < length; i++) {
-                    int objRef = (int) parseUnsignedInt(copyOfRange(bytes,
-                            offset + arrayOffset + i * objectRefSize,
-                            offset + arrayOffset + (i + 1) * objectRefSize));
+                    int objRef = (int) parseUnsignedInt(bytes, offset + arrayOffset + i * objectRefSize, offset + arrayOffset + (i + 1) * objectRefSize);
                     array.setValue(i, parseObject(objRef));
                 }
                 return array;
@@ -299,9 +295,7 @@ public class BinaryPropertyListParser {
 
                 NSSet set = new NSSet(true);
                 for (int i = 0; i < length; i++) {
-                    int objRef = (int) parseUnsignedInt(copyOfRange(bytes,
-                            offset + contentOffset + i * objectRefSize,
-                            offset + contentOffset + (i + 1) * objectRefSize));
+                    int objRef = (int) parseUnsignedInt(bytes, offset + contentOffset + i * objectRefSize, offset + contentOffset + (i + 1) * objectRefSize);
                     set.addObject(parseObject(objRef));
                 }
                 return set;
@@ -314,9 +308,7 @@ public class BinaryPropertyListParser {
 
                 NSSet set = new NSSet();
                 for (int i = 0; i < length; i++) {
-                    int objRef = (int) parseUnsignedInt(copyOfRange(bytes,
-                            offset + contentOffset + i * objectRefSize,
-                            offset + contentOffset + (i + 1) * objectRefSize));
+                    int objRef = (int) parseUnsignedInt(bytes, offset + contentOffset + i * objectRefSize, offset + contentOffset + (i + 1) * objectRefSize);
                     set.addObject(parseObject(objRef));
                 }
                 return set;
@@ -329,23 +321,19 @@ public class BinaryPropertyListParser {
 
                 NSDictionary dict = new NSDictionary();
                 for (int i = 0; i < length; i++) {
-                    int keyRef = (int) parseUnsignedInt(copyOfRange(bytes,
-                            offset + contentOffset + i * objectRefSize,
-                            offset + contentOffset + (i + 1) * objectRefSize));
-                    int valRef = (int) parseUnsignedInt(copyOfRange(bytes,
-                            offset + contentOffset + (length * objectRefSize) + i * objectRefSize,
-                            offset + contentOffset + (length * objectRefSize) + (i + 1) * objectRefSize));
+                    int keyRef = (int) parseUnsignedInt(bytes, offset + contentOffset + i * objectRefSize, offset + contentOffset + (i + 1) * objectRefSize);
+                    int valRef = (int) parseUnsignedInt(bytes, offset + contentOffset + (length * objectRefSize) + i * objectRefSize, offset + contentOffset + (length * objectRefSize) + (i + 1) * objectRefSize);
                     NSObject key = parseObject(keyRef);
                     NSObject val = parseObject(valRef);
+                    assert key != null; //Encountering a null object at this point would either be a fundamental error in the parser or an error in the property list
                     dict.put(key.toString(), val);
                 }
                 return dict;
             }
             default: {
-                System.err.println("WARNING: The given binary property list contains an object of unknown type (" + objType + ")");
+                throw new PropertyListFormatException("The given binary property list contains an object of unknown type (" + objType + ")");
             }
         }
-        return null;
     }
 
     /**
@@ -368,7 +356,7 @@ public class BinaryPropertyListParser {
             int intLength = (int) Math.pow(2, intInfo);
             offsetValue = 2 + intLength;
             if (intLength < 3) {
-                lengthValue = (int) parseUnsignedInt(copyOfRange(bytes, offset + 2, offset + 2 + intLength));
+                lengthValue = (int) parseUnsignedInt(bytes, offset + 2, offset + 2 + intLength);
             } else {
                 lengthValue = new BigInteger(copyOfRange(bytes, offset + 2, offset + 2 + intLength)).intValue();
             }
@@ -425,14 +413,9 @@ public class BinaryPropertyListParser {
      * @param bytes The byte array containing the unsigned integer.
      * @return The unsigned integer represented by the given bytes.
      */
+    @SuppressWarnings("unused")
     public static long parseUnsignedInt(byte[] bytes) {
-        long l = 0;
-        for (byte b : bytes) {
-            l <<= 8;
-            l |= b & 0xFF;
-        }
-        l &= 0xFFFFFFFFL;
-        return l;
+        return parseUnsignedInt(bytes, 0, bytes.length);
     }
 
     /**
@@ -459,13 +442,9 @@ public class BinaryPropertyListParser {
      * @param bytes The bytes representing the long integer.
      * @return The long integer represented by the given bytes.
      */
+    @SuppressWarnings("unused")
     public static long parseLong(byte[] bytes) {
-        long l = 0;
-        for (byte b : bytes) {
-            l <<= 8;
-            l |= b & 0xFF;
-        }
-        return l;
+        return parseLong(bytes, 0, bytes.length);
     }
 
     /**
@@ -491,14 +470,9 @@ public class BinaryPropertyListParser {
      * @param bytes The bytes representing the double.
      * @return The double represented by the given bytes.
      */
+    @SuppressWarnings("unused")
     public static double parseDouble(byte[] bytes) {
-        if (bytes.length == 8) {
-            return Double.longBitsToDouble(parseLong(bytes));
-        } else if (bytes.length == 4) {
-            return Float.intBitsToFloat((int) parseLong(bytes));
-        } else {
-            throw new IllegalArgumentException("bad byte array length " + bytes.length);
-        }
+        return parseDouble(bytes, 0, bytes.length);
     }
 
     /**
