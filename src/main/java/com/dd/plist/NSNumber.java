@@ -56,6 +56,7 @@ public class NSNumber extends NSObject implements Comparable<Object> {
 
     private long longValue;
     private double doubleValue;
+    private boolean boolValue;
 
     /**
      * Parses integers and real numbers from their binary representation.
@@ -109,8 +110,8 @@ public class NSNumber extends NSObject implements Comparable<Object> {
                 type = REAL;
             } catch (Exception ex2) {
                 try {
-                    boolean boolValue = "true".equals(text.toLowerCase()) || "yes".equals(text.toLowerCase());
-                    if(!boolValue && !("false".equals(text.toLowerCase()) || "no".equals(text.toLowerCase()))) {
+                    boolValue = text.toLowerCase().equals("true") || text.toLowerCase().equals("yes");
+                    if(!boolValue && !(text.toLowerCase().equals("false") || text.toLowerCase().equals("no"))) {
                         throw new Exception("not a boolean");
                     }
                     type = BOOLEAN;
@@ -158,6 +159,7 @@ public class NSNumber extends NSObject implements Comparable<Object> {
      * @param b The boolean value.
      */
     public NSNumber(boolean b) {
+        boolValue = b;
         doubleValue = longValue = b ? 1 : 0;
         type = BOOLEAN;
     }
@@ -207,7 +209,10 @@ public class NSNumber extends NSObject implements Comparable<Object> {
      * @return <code>true</code> if the value is true or non-zero, <code>false</code> otherwise.
      */
     public boolean boolValue() {
-        return longValue != 0;
+        if (type == BOOLEAN)
+            return boolValue;
+        else
+            return longValue != 0;
     }
 
     /**
@@ -260,7 +265,7 @@ public class NSNumber extends NSObject implements Comparable<Object> {
     public boolean equals(Object obj) {
         if (!(obj instanceof NSNumber)) return false;
         NSNumber n = (NSNumber) obj;
-        return type == n.type && longValue == n.longValue && doubleValue == n.doubleValue;
+        return type == n.type && longValue == n.longValue && doubleValue == n.doubleValue && boolValue == n.boolValue;
     }
 
     @Override
@@ -355,7 +360,7 @@ public class NSNumber extends NSObject implements Comparable<Object> {
     protected void toASCII(StringBuilder ascii, int level) {
         indent(ascii, level);
         if (type == BOOLEAN) {
-            ascii.append(boolValue() ? "YES" : "NO");
+            ascii.append(boolValue ? "YES" : "NO");
         } else {
             ascii.append(toString());
         }
@@ -378,7 +383,7 @@ public class NSNumber extends NSObject implements Comparable<Object> {
                 break;
             }
             case BOOLEAN: {
-                if (boolValue()) {
+                if (boolValue) {
                     ascii.append("<*BY>");
                 } else {
                     ascii.append("<*BN>");
